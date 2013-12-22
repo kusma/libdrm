@@ -70,7 +70,7 @@ static struct fd_bo * bo_from_handle(struct fd_device *dev,
 	bo->size = size;
 	bo->handle = handle;
 	atomic_set(&bo->refcnt, 1);
-	list_inithead(&bo->list);
+	DRMINITLISTHEAD(&bo->list);
 	/* add ourself into the handle table: */
 	drmHashInsert(dev->handle_table, handle, bo);
 	return bo;
@@ -88,14 +88,14 @@ void fd_cleanup_bo_cache(struct fd_device *dev, time_t time)
 		struct fd_bo_bucket *bucket = &dev->cache_bucket[i];
 		struct fd_bo *bo;
 
-		while (!LIST_IS_EMPTY(&bucket->list)) {
-			bo = LIST_ENTRY(struct fd_bo, bucket->list.next, list);
+		while (!DRMLISTEMPTY(&bucket->list)) {
+			bo = DRMLISTENTRY(struct fd_bo, bucket->list.next, list);
 
 			/* keep things in cache for at least 1 second: */
 			if (time && ((time - bo->free_time) <= 1))
 				break;
 
-			list_del(&bo->list);
+			DRMLISTDEL(&bo->list);
 			bo_del(bo);
 		}
 	}
@@ -141,17 +141,17 @@ static struct fd_bo *find_in_bucket(struct fd_device *dev,
 	 * (MRU, since likely to be in GPU cache), rather than head (LRU)..
 	 */
 	pthread_mutex_lock(&table_lock);
-	while (!LIST_IS_EMPTY(&bucket->list)) {
-		bo = LIST_ENTRY(struct fd_bo, bucket->list.next, list);
+	while (!DRMLISTEMPTY(&bucket->list)) {
+		bo = DRMLISTENTRY(struct fd_bo, bucket->list.next, list);
 		if (0 /* TODO: if madvise tells us bo is gone... */) {
-			list_del(&bo->list);
+			DRMLISTDEL(&bo->list);
 			bo_del(bo);
 			bo = NULL;
 			continue;
 		}
 		/* TODO check for compatible flags? */
 		if (is_idle(bo)) {
-			list_del(&bo->list);
+			DRMLISTDEL(&bo->list);
 			break;
 		}
 		bo = NULL;
@@ -267,7 +267,7 @@ void fd_bo_del(struct fd_bo *bo)
 			clock_gettime(CLOCK_MONOTONIC, &time);
 
 			bo->free_time = time.tv_sec;
-			list_addtail(&bo->list, &bucket->list);
+			DRMLISTADDTAIL(&bo->list, &bucket->list);
 			fd_cleanup_bo_cache(dev, time.tv_sec);
 
 			/* bo's in the bucket cache don't have a ref and

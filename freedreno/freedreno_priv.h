@@ -44,7 +44,7 @@
 #include "xf86drm.h"
 #include "xf86atomic.h"
 
-#include "list.h"
+#include "libdrm_lists.h"
 
 #include "freedreno_drmif.h"
 #include "freedreno_ringbuffer.h"
@@ -61,7 +61,7 @@ struct fd_device_funcs {
 
 struct fd_bo_bucket {
 	uint32_t size;
-	struct list_head list;
+	drmMMListHead list;
 };
 
 struct fd_device {
@@ -136,7 +136,7 @@ struct fd_bo {
 	struct fd_bo_funcs *funcs;
 
 	int bo_reuse;
-	struct list_head list;   /* bucket-list entry */
+	drmMMListHead list;      /* bucket-list entry */
 	time_t free_time;        /* time when added to bucket-list */
 };
 

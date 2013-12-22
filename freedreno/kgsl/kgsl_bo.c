@@ -159,7 +159,7 @@ struct fd_bo * kgsl_bo_from_handle(struct fd_device *dev,
 	bo->funcs = &funcs;
 
 	for (i = 0; i < ARRAY_SIZE(kgsl_bo->list); i++)
-		list_inithead(&kgsl_bo->list[i]);
+		DRMINITLISTHEAD(&kgsl_bo->list[i]);
 
 	return bo;
 }

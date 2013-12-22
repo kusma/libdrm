@@ -135,7 +135,7 @@ struct fd_bo * msm_bo_from_handle(struct fd_device *dev,
 	bo->funcs = &funcs;
 
 	for (i = 0; i < ARRAY_SIZE(msm_bo->list); i++)
-		list_inithead(&msm_bo->list[i]);
+		DRMINITLISTHEAD(&msm_bo->list[i]);
 
 	return bo;
 }

@@ -70,7 +70,7 @@ struct msm_bo {
 	uint64_t offset;
 	uint64_t presumed;
 	uint32_t indexp1[FD_PIPE_MAX]; /* index plus 1 */
-	struct list_head list[FD_PIPE_MAX];
+	drmMMListHead list[FD_PIPE_MAX];
 };
 
 static inline struct msm_bo * to_msm_bo(struct fd_bo *x)

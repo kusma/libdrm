@@ -55,12 +55,12 @@ struct kgsl_pipe {
 	/* list of bo's that are referenced in ringbuffer but not
 	 * submitted yet:
 	 */
-	struct list_head submit_list;
+	drmMMListHead submit_list;
 
 	/* list of bo's that have been submitted but timestamp has
 	 * not passed yet (so still ref'd in active cmdstream)
 	 */
-	struct list_head pending_list;
+	drmMMListHead pending_list;
 
 	/* if we are the 2d pipe, and want to wait on a timestamp
 	 * from 3d, we need to also internally open the 3d pipe:
@@ -82,7 +82,7 @@ struct kgsl_bo {
 	/* timestamp (per pipe) for bo's in a pipe's pending_list: */
 	uint32_t timestamp[FD_PIPE_MAX];
 	/* list-node for pipe's submit_list or pending_list */
-	struct list_head list[FD_PIPE_MAX];
+	drmMMListHead list[FD_PIPE_MAX];
 };
 
 static inline struct kgsl_bo * to_kgsl_bo(struct fd_bo *x)

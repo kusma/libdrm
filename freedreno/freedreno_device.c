@@ -46,7 +46,7 @@ add_bucket(struct fd_device *dev, int size)
 
 	assert(i < ARRAY_SIZE(dev->cache_bucket));
 
-	list_inithead(&dev->cache_bucket[i].list);
+	DRMINITLISTHEAD(&dev->cache_bucket[i].list);
 	dev->cache_bucket[i].size = size;
 	dev->num_buckets++;
 }

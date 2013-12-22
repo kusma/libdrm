@@ -117,13 +117,13 @@ void kgsl_pipe_add_submit(struct kgsl_pipe *kgsl_pipe,
 {
 	struct fd_pipe *pipe = &kgsl_pipe->base;
 	struct fd_bo *bo = &kgsl_bo->base;
-	struct list_head *list = &kgsl_bo->list[pipe->id];
-	if (LIST_IS_EMPTY(list)) {
+	drmMMListHead *list = &kgsl_bo->list[pipe->id];
+	if (DRMLISTEMPTY(list)) {
 		fd_bo_ref(bo);
 	} else {
-		list_del(list);
+		DRMLISTDEL(list);
 	}
-	list_addtail(list, &kgsl_pipe->submit_list);
+	DRMLISTADDTAIL(list, &kgsl_pipe->submit_list);
 }
 
 /* prepare buffers on submit list before flush: */
@@ -135,7 +135,7 @@ void kgsl_pipe_pre_submit(struct kgsl_pipe *kgsl_pipe)
 	if (!kgsl_pipe->p3d)
 		kgsl_pipe->p3d = fd_pipe_new(pipe->dev, FD_PIPE_3D);
 
-	LIST_FOR_EACH_ENTRY(kgsl_bo, &kgsl_pipe->submit_list, list[pipe->id]) {
+	DRMLISTFOREACHENTRY(kgsl_bo, &kgsl_pipe->submit_list, list[pipe->id]) {
 		uint32_t timestamp = kgsl_bo_get_timestamp(kgsl_bo);
 		if (timestamp)
 			fd_pipe_wait(kgsl_pipe->p3d, timestamp);
@@ -148,11 +148,11 @@ void kgsl_pipe_post_submit(struct kgsl_pipe *kgsl_pipe, uint32_t timestamp)
 	struct fd_pipe *pipe = &kgsl_pipe->base;
 	struct kgsl_bo *kgsl_bo = NULL, *tmp;
 
-	LIST_FOR_EACH_ENTRY_SAFE(kgsl_bo, tmp, &kgsl_pipe->submit_list, list[pipe->id]) {
-		struct list_head *list = &kgsl_bo->list[pipe->id];
-		list_del(list);
+	DRMLISTFOREACHENTRYSAFE(kgsl_bo, tmp, &kgsl_pipe->submit_list, list[pipe->id]) {
+		drmMMListHead *list = &kgsl_bo->list[pipe->id];
+		DRMLISTDEL(list);
 		kgsl_bo->timestamp[pipe->id] = timestamp;
-		list_addtail(list, &kgsl_pipe->pending_list);
+		DRMLISTADDTAIL(list, &kgsl_pipe->pending_list);
 
 		kgsl_bo_set_timestamp(kgsl_bo, timestamp);
 	}
@@ -166,11 +166,11 @@ void kgsl_pipe_process_pending(struct kgsl_pipe *kgsl_pipe, uint32_t timestamp)
 	struct fd_pipe *pipe = &kgsl_pipe->base;
 	struct kgsl_bo *kgsl_bo = NULL, *tmp;
 
-	LIST_FOR_EACH_ENTRY_SAFE(kgsl_bo, tmp, &kgsl_pipe->pending_list, list[pipe->id]) {
-		struct list_head *list = &kgsl_bo->list[pipe->id];
+	DRMLISTFOREACHENTRYSAFE(kgsl_bo, tmp, &kgsl_pipe->pending_list, list[pipe->id]) {
+		drmMMListHead *list = &kgsl_bo->list[pipe->id];
 		if (kgsl_bo->timestamp[pipe->id] > timestamp)
 			return;
-		list_delinit(list);
+		DRMLISTDELINIT(list);
 		kgsl_bo->timestamp[pipe->id] = 0;
 		fd_bo_del(&kgsl_bo->base);
 	}
@@ -233,8 +233,8 @@ struct fd_pipe * kgsl_pipe_new(struct fd_device *dev, enum fd_pipe_id id)
 	kgsl_pipe->fd = fd;
 	kgsl_pipe->drawctxt_id = req.drawctxt_id;
 
-	list_inithead(&kgsl_pipe->submit_list);
-	list_inithead(&kgsl_pipe->pending_list);
+	DRMINITLISTHEAD(&kgsl_pipe->submit_list);
+	DRMINITLISTHEAD(&kgsl_pipe->pending_list);
 
 	GETPROP(fd, VERSION,     kgsl_pipe->version);
 	GETPROP(fd, DEVICE_INFO, kgsl_pipe->devinfo);

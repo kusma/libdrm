@@ -35,7 +35,7 @@ struct msm_ringbuffer {
 	struct fd_ringbuffer base;
 	struct fd_bo *ring_bo;
 
-	struct list_head submit_list;
+	drmMMListHead submit_list;
 
 	/* bo's table: */
 	struct drm_msm_gem_submit_bo *bos;
@@ -80,16 +80,16 @@ static uint32_t bo2idx(struct fd_ringbuffer *ring, struct fd_bo *bo, uint32_t fl
 	int id = ring->pipe->id;
 	uint32_t idx;
 	if (!msm_bo->indexp1[id]) {
-		struct list_head *list = &msm_bo->list[id];
+		drmMMListHead *list = &msm_bo->list[id];
 		idx = APPEND(msm_ring, bos);
 		msm_ring->bos[idx].flags = 0;
 		msm_ring->bos[idx].handle = bo->handle;
 		msm_ring->bos[idx].presumed = msm_bo->presumed;
 		msm_bo->indexp1[id] = idx + 1;
 
-		assert(LIST_IS_EMPTY(list));
+		assert(DRMLISTEMPTY(list));
 		fd_bo_ref(bo);
-		list_addtail(list, &msm_ring->submit_list);
+		DRMLISTADDTAIL(list, &msm_ring->submit_list);
 	} else {
 		idx = msm_bo->indexp1[id] - 1;
 	}
@@ -194,9 +194,9 @@ static int msm_ringbuffer_flush(struct fd_ringbuffer *ring, uint32_t *last_start
 	if (ret)
 		ERROR_MSG("submit failed: %d (%s)", ret, strerror(errno));
 
-	LIST_FOR_EACH_ENTRY_SAFE(msm_bo, tmp, &msm_ring->submit_list, list[id]) {
-		struct list_head *list = &msm_bo->list[id];
-		list_delinit(list);
+	DRMLISTFOREACHENTRYSAFE(msm_bo, tmp, &msm_ring->submit_list, list[id]) {
+		drmMMListHead *list = &msm_bo->list[id];
+		DRMLISTDELINIT(list);
 		msm_bo->indexp1[id] = 0;
 		fd_bo_del(&msm_bo->base);
 	}
@@ -287,7 +287,7 @@ struct fd_ringbuffer * msm_ringbuffer_new(struct fd_pipe *pipe,
 	ring = &msm_ring->base;
 	ring->funcs = &funcs;
 
-	list_inithead(&msm_ring->submit_list);
+	DRMINITLISTHEAD(&msm_ring->submit_list);
 
 	msm_ring->ring_bo = fd_bo_new(pipe->dev, size, 0);
 	if (!msm_ring->ring_bo) {
